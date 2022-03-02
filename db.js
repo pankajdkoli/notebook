@@ -9,4 +9,4 @@ const connectTomMongo = () => {
 
 }
 
-module.exports = connectTomMongo;
+module.exports = connectTomMongo; 
