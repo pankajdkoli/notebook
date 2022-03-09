@@ -2,6 +2,11 @@ const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
 const { body, validationResult } = require('express-validator'); // ...rest of the initial code omitted for simplicity.
+const bcrypt = require('bcryptjs'); //for hashing
+var jwt = require('jsonwebtoken'); //secretOrPrivateKey for pass is called singnature
+
+const JWT__SECRET = 'secretkey@123';   //secret key means singnature   
+
 
 
 // create a user using post: "api/auth/createuser". no login required
@@ -22,17 +27,27 @@ router.post('/createuser', [
     try {
         let user = await User.findOne({ email: req.body.email });
         if (user) {
-            return res.status(400).json({ error: "sorry a  user with this email aleady exists" })
+            return res.status(400).json({ error: "sorry a user with this email aleady exists" })
         }
+
+        // using hashing password method and salt
+        const salt = await bcrypt.genSalt(10);
+        const secPass = await bcrypt.hash(req.body.password, salt);
 
         // create a new user 
         user = await User.create({
             name: req.body.name,
-            password: req.body.password,
+            password: secPass,
             email: req.body.email,
         })
-        res.json(user)
-        
+
+        //this is one object of data
+        const data = {
+            id: user.id
+        }
+        const authToken = jwt.sign(data, JWT__SECRET)   //call JWT__SECRET vari and set secrete key for pass 
+        res.json({ authToken })
+
         //this method catch errors
     } catch (error) {
         console.error(error.message);
