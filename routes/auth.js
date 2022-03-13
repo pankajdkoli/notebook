@@ -9,7 +9,7 @@ const JWT__SECRET = 'secretkey@123';   //secret key means singnature
 
 
 
-// create a user using post: "api/auth/createuser". no login required
+// Router 1: create a user using post: "api/auth/createuser". no login required
 router.post('/createuser', [
     body('name', 'please enter a valied name').isLength({ min: 3 }),
     body('email', 'enter a valied mail').isEmail(),
@@ -45,7 +45,8 @@ router.post('/createuser', [
         const data = {
             id: user.id
         }
-        const authToken = jwt.sign(data, JWT__SECRET)   //call JWT__SECRET vari and set secrete key for pass 
+        const authToken = jwt.sign(data, JWT__SECRET)   //call JWT__SECRET variable and set secrete key for pass 
+        res.status(200);
         res.json({ authToken })
 
         //this method catch errors
@@ -54,6 +55,50 @@ router.post('/createuser', [
         res.status(500).send("found some errors");
 
     }
+})
+
+// Router 2: login a user using post: "api/auth/login". no login required
+router.post('/login', [
+    body('email', 'Enter a valid mail').isEmail(),
+    body('password', 'Password cannot be blank').exists(),
+
+], async (req, res) => {
+
+    //if there are errors return bad request and errors
+    const errors = validationResult(req);
+    res.status(404);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    //Checking user email is correct
+    const { email, password } = req.body;
+    try {
+        let user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ error: "please try to loging with correct credentials" });
+
+        }
+        //password checking while user login enter correct or wrong pass
+        const passwordCompare = await bcrypt.compare(password, user.password);
+        if (!passwordCompare) {
+            return res.status(400).json({ error: "please try to loging with correct credentials" });
+        }
+
+        //this is one object of data
+        const data = {
+            id: user.id
+        }
+        //call JWT__SECRET vari and set secrete key for pass and save into database
+        const authToken = jwt.sign(data, JWT__SECRET)   
+        res.status(200);
+        res.json({ authToken })
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("internal server erorr! Found");
+
+    }
+
 })
 
 module.exports = router;
