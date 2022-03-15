@@ -6,7 +6,7 @@ const { body, validationResult } = require('express-validator'); // ...rest of t
 
 
 
-// Route 1: get all notes using post: GET "api/notes/fetchallnotes". login required
+// Route 1: get all notes using GET: "api/notes/fetchallnotes". login required
 router.get('/fetchallnotes', fetchuser, async (req, res) => {
     try {
         const notes = await Note.find({ user: req.user.id });
@@ -47,12 +47,12 @@ router.post('/addnote', fetchuser, [
         }
     })
 
-// Route 3: Update an existing note using post: PUT "api/notes/updatenote". login required 
+// Route 3: Update an existing note using: PUT "api/notes/updatenote". login required 
 router.put('/updatenote/:id', fetchuser, async (req, res) => {
     const { title, description, tag } = req.body;
 
     //creating a newNote Object..
-    const n ewNote = {};
+    const newNote = {};
     if (title) { newNote.title = title };
     if (description) { newNote.description = description };
     if (tag) { newNote.tag = tag };
