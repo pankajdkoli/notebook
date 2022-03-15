@@ -6,7 +6,7 @@ const { body, validationResult } = require('express-validator'); // ...rest of t
 
 
 
-// Route 1: get all notes using post: GET "api/auth/fetchallnotes". login required
+// Route 1: get all notes using post: GET "api/notes/fetchallnotes". login required
 router.get('/fetchallnotes', fetchuser, async (req, res) => {
     try {
         const notes = await Note.find({ user: req.user.id });
@@ -19,32 +19,57 @@ router.get('/fetchallnotes', fetchuser, async (req, res) => {
 
 })
 
-// Route 2: ADD new notes using post: POST "api/auth/addnote". login required 
+// Route 2: ADD new notes using post: POST "api/notes/addnote". login required 
 router.post('/addnote', fetchuser, [
     body('title', 'please enter a valid title').isLength({ min: 3 }),
     body('description', 'Descripton must be atlist 5 character ').isLength({ min: 5 }),], async (req, res) => {
-    try {
-        const { title, description, tag } = req.body; // dustructuring  method..
+        try {
+            const { title, description, tag } = req.body; // dustructuring  method..
 
-        //if there are errors return bad request and errors
-        const errors = validationResult(req);
-        res.status(404);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            //if there are errors return bad request and errors
+            const errors = validationResult(req);
+            res.status(404);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
+            //create a new notes 
+            const note = new Note({
+                title, description, tag, user: req.user.id
+            })
+            //save notes
+            const saveNote = await note.save()
+            res.status(200);
+            res.json(saveNote)
+
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).send("internal server erorr! Found");
         }
-        //create a new notes 
-        const note = new Note({
-            title, description, tag, user: req.user.id
-        })
-        //save notes
-        const saveNote = await note.save()
-        res.status(200);
-        res.json(saveNote)
+    })
 
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).send("internal server erorr! Found");
+// Route 3: Update an existing note using post: PUT "api/notes/updatenote". login required 
+router.put('/updatenote/:id', fetchuser, async (req, res) => {
+    const { title, description, tag } = req.body;
+
+    //creating a newNote Object..
+    const n ewNote = {};
+    if (title) { newNote.title = title };
+    if (description) { newNote.description = description };
+    if (tag) { newNote.tag = tag };
+
+    //find the note to be updated and update it.
+    let note = await Note.findById(req.params.id);
+    if (!note) {
+        return res.status(404).send(" id not found")
     }
+    //that time user id cheking while user update notes cheking if id not equal to note user.id
+    if (note.user.toString() !== req.user.id) {
+        return res.status(401).send("not Allowed");
+    }
+          //update note     //{$set:newNote} is parameter { new: true }..is object to create for new content
+    note = await Note.findByIdAndUpdate(req.params.id, { $set: newNote }, { new: true })
+    res.json({note}); //save it..! 
+
 })
 
 module.exports = router;    
